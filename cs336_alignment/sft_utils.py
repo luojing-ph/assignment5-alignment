@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
-
 def tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer):
     pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else -100
 
@@ -40,3 +39,9 @@ def tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer):
     response_mask_tensor = torch.stack(response_masks)
 
     return {"input_ids": input_ids_tensor, "labels": label_tensor, "response_mask": response_mask_tensor}
+
+
+def compute_entropy(logits: torch.Tensor) -> torch.Tensor:
+    log_probs = F.log_softmax(logits, dim=-1)
+    probs = torch.exp(log_probs)
+    return -torch.sum(probs * log_probs, dim=-1)
