@@ -45,3 +45,16 @@ def compute_entropy(logits: torch.Tensor) -> torch.Tensor:
     log_probs = F.log_softmax(logits, dim=-1)
     probs = torch.exp(log_probs)
     return -torch.sum(probs * log_probs, dim=-1)
+
+
+def get_response_log_probs(model: PreTrainedModel, input_ids: torch.Tensor, labels: torch.Tensor,
+                           return_token_entropy: bool = False) -> dict[str, torch.Tensor]:
+    logits = model(input_ids).logits
+    log_sum_exp = torch.logsumexp(logits, dim=-1)
+    logit_y = logits.gather(dim=-1, index=labels.unsqueeze(-1)).squeeze(-1)
+    label_token_log_softmax = logit_y - log_sum_exp
+
+    res = {"log_probs": label_token_log_softmax}
+    if return_token_entropy:
+        res['token_entropy'] = compute_entropy(logits)
+    return res
